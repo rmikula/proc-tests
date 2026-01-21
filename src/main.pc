@@ -1,0 +1,109 @@
+#include "navdemo1.h"
+#include <stdio.h>
+// #include "co_mena.h"
+
+#define SQLCA_STORAGE_CLASS extern
+#define ORACA_STORAGE_CLASS extern
+#include <sqlcpr.h>
+#include <sql2oci.h> 
+
+char *gsFtokID = "1001";
+const char *gsJobName = "test";
+const char *gsStatMV = "CZ";
+
+char *asIUserName = "mikular";
+char *asIPasswd = "Kurwamornavas6x.";
+char *asIDBName = "M24CZDEV.WORLD";
+
+EXEC ORACLE OPTION(char_map = string);
+// EXEC ORACLE OPTION(OBJECTS=YES);
+
+int main(int argc, char *argv[])
+{
+
+    EXEC SQL WHENEVER SQLERROR GOTO errprint;
+
+    OCIEnv *envhp;
+    OCISvcCtx *svchp;
+
+    // varchar gsTableData[4015];
+    char gsTableData[1000];
+    varchar xxx[30];
+
+    short salary_ind; // Toto je n� null indicator
+    budoka *budo_p;                                /* Pointer to budoka object */
+    budoka_ref *budo_ref;                /* Pointer to budoka object reference */
+
+    co_mena *mena;
+    co_mena_ind *ind;
+    // co_mena_ref *mena_ref;
+    int val = 3;
+    char some_text[] = {"Hel"};
+
+    // MQASERV/MQASERV@M24CZDEV.WORLD
+    // set(ENV{CONNM24CZ} "mikular/xxxxx@M24CZDEV.WORLD")
+    EXEC SQL CONNECT :asIUserName IDENTIFIED BY :asIPasswd USING :asIDBName;
+    // if (DB_connect("mikular", "Kurwamornavas6x.", "M24CZDEV.WORLD") != 0)
+    // {
+    //     return -1;
+    // }
+
+    // 2. Get the OCI Environment Handle
+    sword status = SQLEnvGet(SQL_SINGLE_RCTX, &envhp);
+    if (status != SQL_SUCCESS) {
+        printf("Error: Could not retrieve OCI Environment Handle\n");
+        return 0;
+    }
+
+    // 3. (Optional) Get the Service Context Handle
+    // Most OCI functions (like OCIStringPtr) also require the Service Context
+    status = SQLSvcCtxGet(SQL_SINGLE_RCTX, (text *)0, (sb4)0, &svchp);
+
+    // sword rs  =  SQLEnvGet(dvoid *rctx, OCIEnv **oeh);
+
+    // EXEC SQL ALLOCATE :mena;
+    /* Create a new customer object with an associated indicator */
+    
+    EXEC SQL OBJECT CREATE :mena:ind;
+    // ind._atomic = ind.id_central = ind.id_ciselniky = ind.kod = OCI_IND_NULL;
+
+    // exec sql SELECT db2inst1.co_mena(id_ciselniky => 344, kod => 'CZK', id_central => 324), 'Hello' into :mena , :gsTableData FROM dual;
+
+
+    // exec sql object get id_central from :mena into :val;
+    // exec sql object get kod from :mena into :xxx;
+
+    exec sql object set kod, id_central  of :mena to :some_text, :val;
+
+    ind->kod = OCI_IND_NOTNULL;
+
+    text *xx = OCIStringPtr(envhp, mena->kod);
+
+    
+
+    EXEC SQL EXECUTE
+    DECLARE
+        p_mena db2inst1.co_mena := db2inst1.co_mena(id_ciselniky => 10,
+                             kod          => :some_text,
+                             id_central   => 30);
+    begin
+        db2inst1.test_proc(p_mena => :mena:ind,
+                           p_string => :gsTableData:salary_ind);
+    end;
+    END-EXEC;
+
+    EXEC SQL FREE :mena;
+
+    // printf("Result: %.*s\n", gsTableData.len, gsTableData.arr);
+    printf("Result: %s\n", gsTableData);
+
+    EXEC SQL COMMIT WORK RELEASE;
+
+    return 0;
+
+errprint:
+    EXEC SQL WHENEVER SQLERROR CONTINUE;
+    printf("Error: %s %d\n", sqlca.sqlerrm.sqlerrmc, sqlca.sqlcode);
+
+    return -1;
+}
