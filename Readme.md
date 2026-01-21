@@ -33,5 +33,6 @@ TYPE DB2INST1.CO_MENA AS co_mena
 
 ## Duležité !!!
 Je potřeba demoout.typ zahrnout do proc kompilace: 
-``` proc INTYPE=navdemo.typ
-
+```
+proc INTYPE=navdemo.typ
+```
